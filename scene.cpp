@@ -347,8 +347,8 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
     vec3 refractionDir;
     //findRefractionDirection(rayDir, N, refractionDir);
   
-    Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie)) : opacity * Iout;
-
+    //Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie)) : opacity * Iout;
+    Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * refractionDir) : opacity * Iout;
   }
 
   return Iout;
@@ -368,7 +368,7 @@ bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
 
 {
   float cosi = (rayDir.normalize() * N.normalize());  //cos(theta1) cos(incient)
-  cosi = cosi < -1 ? -1 : cosi > 1 ? 1 : cosi; //clamps cosi between -1 and 1
+  //cosi = cosi < -1 ? -1 : cosi > 1 ? 1 : cosi; //clamps cosi between -1 and 1
 
   float etai = 1.000277, etat = 1.458; // n1 = air n2 = glass
   vec3 n = N;  // we might need to flip N
@@ -380,11 +380,11 @@ bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
   else // we are inside the surface and cos(theta) is positive but need to flip the normal
   {
     std::swap(etai, etat); // also swap refraction indicies 
-    n = -1.0 * n;
+    n = -1.0f * n;
   }
   
   float eta = etai / etat; // n1 / n2
-  float k = 1 - pow(eta,2) * (1 - pow(cosi,2));
+  float k = 1 - (eta * eta) * (1 - (cosi * cosi));
   if (k < 0) // we have total internal reflection
   {
     
@@ -448,14 +448,13 @@ vec3 Scene::pixelColour(int x, int y)
 
   vec3 result;
 
-#if 1
+#if 0
 
   vec3 dir = (llCorner + (x+0.5)*right + (y+0.5)*up).normalize(); // pixel centre
 
   result = raytrace( eye->position, dir, 0, -1, -1 );
 
-#else
-
+#else 
   // Antialias through a pixel using ('numPixelSamples' x 'numPixelSamples')
   // rays.  Use a regular pattern if 'jitter' is false; use a jittered
   // patter if 'jitter' is true.
@@ -463,41 +462,20 @@ vec3 Scene::pixelColour(int x, int y)
   // YOUR CODE HERE
   //
   // Change the "#if 1" above to "#if 0" once your code here is ready.
-  vec3 sum;
-  int k = numPixelSamples * numPixelSamples;
-  vec3 dir = (llCorner + x * right + y * up).normalize();
+  const float n = 4;
+  int count = 0;
+  vec3 sum(0, 0, 0);
 
-  for (int count = 0; count < k; count++)
-  {
-    float c, d;
-    if (jitter)
+  for (float dx = 0; dx < 0.999; dx += 1 / n)
+    for (float dy = 0; dy < 0.999; dy += 1 / n)
     {
-      c = static_cast<float>(rand()) / RAND_MAX;
-      d = static_cast<float>(rand()) / RAND_MAX;
-      c -= 0.5;
-      d -= 0.5;
-    }
-    else
-    {
-      c = 0;
-      d = 0;
+      vec3 dir = (llCorner + (x + dx + 0.5 / n) * right + (y + dy + 0.5 / n) * up).normalize();
+      sum = sum + raytrace(eye->position, dir, 0, -1, -1);
+      count++;
     }
 
-    float a = (count % numPixelSamples - (numPixelSamples - 1) / 2);
-    float b = (count / numPixelSamples - (numPixelSamples - 1) / 2);
-
-    dir = dir + a / numPixelSamples * right + b / numPixelSamples * up;
-
-    // Jitter around center of each subdivision again using basis vectors <up/N> and <right/N>
-    dir = dir + c / numPixelSamples * right + d / numPixelSamples * up;
-
-    sum = sum + raytrace(eye->position, dir, 0, -1, -1);
-  }
-
-  // Result is the average
-  result = (1.0 / k) * sum;
-
-#endif
+  result = (1.0 / (float)count) * sum; 
+#endif  
 
   if (storingRays)
     storingRays = false;
