@@ -345,9 +345,9 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
     //
     // Use the 'findRefractionDirection' function (below).
     vec3 refractionDir;
-    findRefractionDirection(rayDir, N, refractionDir);
+    //findRefractionDirection(rayDir, N, refractionDir);
   
-    Iout = (opacity * Iout + (1 - opacity) * calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie));
+    Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie)) : opacity * Iout;
 
   }
 
