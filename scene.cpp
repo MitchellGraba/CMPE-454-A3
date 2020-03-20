@@ -347,7 +347,7 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
     vec3 refractionDir;
     findRefractionDirection(rayDir, N, refractionDir);
   
-    Iout = Iout + calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie);
+    Iout = (opacity * Iout + (1 - opacity) * refractionDir); //calcIout(N, refractionDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie);
 
   }
 
@@ -367,11 +367,12 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
 bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
 
 {
-  
-  float cosi = cos(rayDir * N) < -1 ? -1 : cos(rayDir * N) > 1 ? 1 : cos(rayDir * N); //clamps cosi between -1 and 1
+  float cosi = (rayDir.normalize() * N.normalize());  //cos(theta1) cos(incient)
+  cosi = cosi < -1 ? -1 : cosi > 1 ? 1 : cosi; //clamps cosi between -1 and 1
 
-  float etai = 1.000277, etat = 1.458; // n1 and n2
-  vec3 n = N;  // so we don't need to reference params over
+  float etai = 1.000277, etat = 1.458; // n1 = air n2 = glass
+  vec3 n = N;  // we might need to flip N
+ 
   if (cosi < 0) // we are outside the surface and we want cos(theta) to be positive
   {
     cosi = -cosi;
@@ -381,20 +382,25 @@ bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
     std::swap(etai, etat); // also swap refraction indicies 
     n = -1.0 * n;
   }
+  
   float eta = etai / etat; // n1 / n2
   float k = 1 - pow(eta,2) * (1 - pow(cosi,2));
-  if (k >= 0)
+  if (k < 0) // we have total internal reflection
   {
+    
+    return false;
+  }
+  else  
+  {
+
     refractionDir = eta * rayDir + (eta * cosi - sqrtf(k)) * n;
     
-    std::cout << "ray in: " << rayDir << endl;
-    std::cout << "ray out: " <<  refractionDir << endl;
+    //std::cout << "ray in: " << rayDir << endl;
+    //std::cout << "ray out: " <<  refractionDir << endl;
     return true;
   }
-  // else we have total internal reflection
-  return false;
-
-  // YOUR CODE HERE
+ 
+    // YOUR CODE HERE
 }
 
 // Calculate the outgoing intensity due to light Iin entering from
