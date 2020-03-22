@@ -348,7 +348,7 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
     //findRefractionDirection(rayDir, N, refractionDir);
   
     //Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * calcIout(N, rayDir, refractionDir, R, mat->kd, mat->ks, mat->n, mat->Ie)) : opacity * Iout;
-    Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * refractionDir) : opacity * Iout;
+    Iout = findRefractionDirection(rayDir, N, refractionDir) ? (opacity * Iout + (1 - opacity) * (1 - opacity) * raytrace(P, refractionDir, depth, objIndex, objPartIndex)) : opacity * Iout;
   }
 
   return Iout;
@@ -363,6 +363,7 @@ vec3 Scene::raytrace(vec3 &rayStart, vec3 &rayDir, int depth, int thisObjIndex, 
 //
 // Return true if a value is returned in 'refractionDir'.  Return
 // false if there's total internal reflection (hence, no refraction).
+
 
 bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
 
@@ -397,11 +398,47 @@ bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
     
     //std::cout << "ray in: " << rayDir << endl;
     //std::cout << "ray out: " <<  refractionDir << endl;
-    return true;
+  
   }
- 
+  return true;
     // YOUR CODE HERE
 }
+
+/*
+bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
+
+{
+   double n1, n2, n;
+    double cosI = (rayDir.x * N.x + rayDir.y * N.y + rayDir.z * N.z); //dot product
+    if (cosI > 0.0)
+    {
+        n1 = 1.008; //refractive index of air
+        n2 = 1.510; //refractive index of glass
+        N = -1.0 * N; //invert N
+    }
+    else
+    {
+        n1 = 1.510;
+        n2 = 1.008;
+        cosI = -cosI;
+    }
+    n = n1 / n2; 
+    double sinT2 = n * n * (1.0 - cosI * cosI);
+    double cosT = sqrt(1.0 - sinT2);
+    
+    if (n == 1.0) 
+    {
+        return false;
+    }
+    if (cosT * cosT < 0.0)//tot inner refl
+    {
+        
+        return false;
+    }
+    refractionDir = n * rayDir + (n * cosI - cosT) * N;
+    return true;
+}
+*/
 
 // Calculate the outgoing intensity due to light Iin entering from
 // direction L and exiting to direction E, with normal N.  Reflection
@@ -462,7 +499,7 @@ vec3 Scene::pixelColour(int x, int y)
   // YOUR CODE HERE
   //
   // Change the "#if 1" above to "#if 0" once your code here is ready.
-  const float n = 4;
+  const float n = 2;
   int count = 0;
   vec3 sum(0, 0, 0);
 
