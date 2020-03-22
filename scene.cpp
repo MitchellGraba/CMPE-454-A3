@@ -403,43 +403,6 @@ bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
   return true;
     // YOUR CODE HERE
 }
-
-/*
-bool Scene::findRefractionDirection(vec3 &rayDir, vec3 &N, vec3 &refractionDir)
-
-{
-   double n1, n2, n;
-    double cosI = (rayDir.x * N.x + rayDir.y * N.y + rayDir.z * N.z); //dot product
-    if (cosI > 0.0)
-    {
-        n1 = 1.008; //refractive index of air
-        n2 = 1.510; //refractive index of glass
-        N = -1.0 * N; //invert N
-    }
-    else
-    {
-        n1 = 1.510;
-        n2 = 1.008;
-        cosI = -cosI;
-    }
-    n = n1 / n2; 
-    double sinT2 = n * n * (1.0 - cosI * cosI);
-    double cosT = sqrt(1.0 - sinT2);
-    
-    if (n == 1.0) 
-    {
-        return false;
-    }
-    if (cosT * cosT < 0.0)//tot inner refl
-    {
-        
-        return false;
-    }
-    refractionDir = n * rayDir + (n * cosI - cosT) * N;
-    return true;
-}
-*/
-
 // Calculate the outgoing intensity due to light Iin entering from
 // direction L and exiting to direction E, with normal N.  Reflection
 // direction R is provided, along with the material properties Kd,
